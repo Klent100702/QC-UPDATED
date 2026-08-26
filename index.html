@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPTxWC — Wrong Category Search</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  background:radial-gradient(circle at top left,#1b2735,#090a0f 50%);
+  color:white;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:'';position:fixed;
+  width:600px;height:600px;
+  background:#ff7a001f;
+  filter:blur(120px);
+  top:-250px;right:-150px;z-index:-2;
+}
+body::after{
+  content:'';position:fixed;
+  width:500px;height:500px;
+  background:#0066ff1f;
+  filter:blur(120px);
+  bottom:-250px;left:-150px;z-index:-2;
+}
+
+/* ─── HEADER ─────────────────────────────── */
+.header{
+  position:fixed;top:20px;left:50%;
+  transform:translateX(-50%);
+  width:95%;max-width:960px;
+  padding:22px 26px;
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  z-index:9999;
+  box-shadow:0 10px 40px rgba(0,0,0,.45);
+}
+
+/* banner */
+.banner{
+  background:linear-gradient(120deg,#ff9a2e,#ff7a1a 55%,#ff6a3d);
+  border-radius:14px;
+  padding:18px 22px;
+  text-align:center;
+  margin-bottom:18px;
+  box-shadow:0 8px 28px rgba(255,122,26,.22);
+  position:relative;
+}
+.banner h1{
+  font-size:24px;font-weight:800;
+  color:#fff;
+  border-bottom:2px solid rgba(255,255,255,.5);
+  display:inline-block;padding-bottom:5px;
+  letter-spacing:.01em;
+}
+.banner .sub{margin-top:6px;font-size:13px;color:rgba(255,255,255,.9);}
+.banner .credit{
+  position:absolute;bottom:7px;right:12px;
+  font-size:10.5px;color:rgba(255,255,255,.55);
+  font-family:monospace;letter-spacing:.04em;
+}
+
+/* ─── SEARCH ─────────────────────────────── */
+.search-wrap{position:relative;width:100%;}
+
+#searchBox{
+  width:100%;padding:16px 48px 16px 18px;
+  border:none;outline:none;border-radius:14px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(20px);
+  color:white;font-size:15px;
+  border:1px solid rgba(255,255,255,.08);
+  transition:.3s;
+}
+#searchBox:focus{
+  border-color:#ff7a00;
+  box-shadow:0 0 25px rgba(255,122,0,.22);
+}
+#searchBox::placeholder{color:#9aa4b2;}
+
+/* clear button */
+.clear-btn{
+  position:absolute;right:14px;top:50%;
+  transform:translateY(-50%);
+  background:none;border:none;
+  color:#9aa4b2;font-size:18px;
+  cursor:pointer;display:none;line-height:1;
+  transition:color .2s;
+}
+.clear-btn:hover{color:#fff;}
+
+/* result count */
+.result-count{
+  margin-top:8px;font-size:12px;
+  color:#9aa4b2;text-align:right;
+  min-height:16px;
+}
+
+/* dropdown */
+#searchResults{
+  position:absolute;top:100%;left:0;width:100%;
+  margin-top:6px;
+  background:#111827;border-radius:14px;
+  overflow:hidden;max-height:260px;overflow-y:auto;
+  z-index:1000;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 15px 40px rgba(0,0,0,.55);
+  display:none;
+}
+.result-item{
+  padding:12px 16px;cursor:pointer;
+  transition:.2s;border-bottom:1px solid rgba(255,255,255,.05);
+}
+.result-item:hover{background:#1f2937;}
+.result-id{font-size:13px;font-weight:700;color:white;}
+.result-category{margin-top:3px;font-size:11.5px;color:#9aa4b2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ─── LAYOUT ─────────────────────────────── */
+.container{
+  padding-top:260px;
+  padding-left:20px;padding-right:20px;padding-bottom:100px;
+  max-width:1200px;margin:0 auto;
+}
+
+#output{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
+  gap:20px;
+}
+
+/* ─── CARD ─────────────────────────────── */
+.data-card{
+  position:relative;overflow:hidden;
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(20px);
+  border-radius:20px;padding:22px;
+  border:1px solid rgba(255,255,255,.07);
+  transition:.3s;animation:fadeUp .4s ease;
+}
+.data-card::before{
+  content:'';position:absolute;
+  width:200px;height:200px;
+  background:rgba(255,122,0,.07);
+  border-radius:50%;top:-110px;right:-110px;
+}
+.data-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(255,122,0,.3);
+  box-shadow:0 10px 32px rgba(0,0,0,.4);
+}
+
+/* card with reminder gets a subtle orange tint border */
+.data-card.has-reminder{
+  border-color:rgba(255,122,0,.22);
+}
+
+.card-lncid{
+  font-size:12px;font-family:monospace;
+  color:#9aa4b2;margin-bottom:6px;
+  letter-spacing:.04em;
+}
+.card-lncid span{color:#ff9a2e;font-weight:700;}
+
+.card-name{
+  font-size:15px;font-weight:700;
+  color:#fff;line-height:1.4;
+  margin-bottom:4px;
+}
+.card-name-zh{
+  font-size:11.5px;color:#6b7280;
+  margin-bottom:10px;
+}
+
+.card-kw-label{
+  font-size:10.5px;font-family:monospace;
+  text-transform:uppercase;letter-spacing:.07em;
+  color:#9aa4b2;margin-bottom:5px;
+}
+.card-kw{
+  font-size:13px;color:#d1d5db;line-height:1.7;
+}
+
+/* ─── REMINDER BOX ─────────────────────────────── */
+.reminder-box{
+  margin-top:12px;
+  border:1.5px solid #ff7a00;
+  border-radius:10px;
+  background:rgba(255,122,0,.10);
+  padding:10px 13px;
+}
+.reminder-label{
+  font-size:10px;font-family:monospace;
+  font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;color:#ff9a2e;
+  margin-bottom:5px;
+}
+.reminder-text{
+  font-size:12.5px;color:#ffd9a8;
+  line-height:1.65;white-space:pre-wrap;
+}
+
+/* ─── HIGHLIGHT ─────────────────────────────── */
+mark{
+  background:#ffe066;color:#000;
+  padding:1px 5px;border-radius:5px;
+  font-weight:800;
+  box-shadow:0 0 10px rgba(255,224,102,.5);
+}
+
+/* ─── NO RESULTS ─────────────────────────────── */
+.no-results{
+  grid-column:1/-1;
+  text-align:center;padding:60px 20px;
+  color:#6b7280;font-size:15px;
+}
+.no-results span{font-size:36px;display:block;margin-bottom:12px;}
+
+/* ─── PULSE ANIMATION ─────────────────────────────── */
+.active-highlight{animation:popHighlight .6s ease;}
+
+/* ─── TOAST ─────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%);
+  padding:13px 22px;border-radius:13px;color:white;
+  display:none;backdrop-filter:blur(20px);z-index:99999;
+  font-size:13.5px;
+}
+.toast.success{background:rgba(40,167,69,.9);}
+.toast.error{background:rgba(220,53,69,.9);}
+
+/* ─── ANIMATIONS ─────────────────────────────── */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(18px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes popHighlight{
+  0%{transform:scale(1);box-shadow:0 0 0 rgba(255,122,0,0);}
+  50%{transform:scale(1.02);box-shadow:0 0 35px rgba(255,122,0,.5),0 0 70px rgba(255,122,0,.15);}
+  100%{transform:scale(1);box-shadow:0 0 0 rgba(255,122,0,0);}
+}
+
+/* ─── MOBILE ─────────────────────────────── */
+@media(max-width:900px){
+  #output{grid-template-columns:1fr;}
+  .header{width:92%;}
+  .banner h1{font-size:19px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="banner">
+    <h1>SupportZebra X Shopee Taiwan</h1>
+    <div class="sub">Wrong Category | Search Engine</div>
+    <div class="credit">by KJJM</div>
+  </div>
+
+  <div class="search-wrap">
+    <input type="text" id="searchBox" placeholder="Search by keyword, category name, or LNCID…" autocomplete="off">
+    <button class="clear-btn" id="clearBtn" title="Clear search">✕</button>
+    <div id="searchResults"></div>
+  </div>
+  <div class="result-count" id="resultCount"></div>
+</div>
+
+<!-- OUTPUT -->
+<div class="container">
+  <div id="output"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- DATA -->
+<script src="ck.js"></script>
+
+<script>
+// ─── HELPERS ───────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+function highlight(text, query){
+  if(!query || query.length < 1) return esc(text);
+  const escaped = esc(text);
+  const regex = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+  return escaped.replace(regex, '<mark>$1</mark>');
+}
+
+// ─── BUILD CARDS ───────────────────────────────────────────────────────────
+const output = document.getElementById('output');
+let allCards = [];   // {el, data, searchText}
+
+function buildCards(){
+  output.innerHTML = '';
+  allCards = [];
+
+  ckData.forEach(row => {
+    const hasReminder = (row['Reminder'] || '').trim().length > 0;
+
+    const card = document.createElement('div');
+    card.className = 'data-card' + (hasReminder ? ' has-reminder' : '');
+
+    const searchText = [
+      row['LNC ID'],
+      row['Category Name (English)'],
+      row['Category Name (中文)'],
+      row['English Keyword'],
+      row['Reminder']
+    ].join(' ').toLowerCase();
+
+    card.dataset.id    = row['LNC ID'];
+    card.dataset.search = searchText;
+    card.dataset.row   = JSON.stringify(row);
+
+    card.innerHTML = cardHTML(row, '');
+    output.appendChild(card);
+    allCards.push({ el: card, searchText });
+  });
+}
+
+function cardHTML(row, query){
+  const id  = row['LNC ID'] || '';
+  const en  = row['Category Name (English)'] || '';
+  const zh  = row['Category Name (中文)'] || '';
+  const kw  = row['English Keyword'] || '';
+  const rem = (row['Reminder'] || '').trim();
+
+  const reminderBlock = rem ? `
+    <div class="reminder-box">
+      <div class="reminder-label">⚠ Additional Notes</div>
+      <div class="reminder-text">${highlight(rem, query)}</div>
+    </div>` : '';
+
+  return `
+    <div class="card-lncid">LNCID: <span>${esc(id)}</span></div>
+    <div class="card-name">${highlight(en, query)}</div>
+    <div class="card-name-zh">${esc(zh)}</div>
+    <div class="card-kw-label">English Keywords</div>
+    <div class="card-kw">${highlight(kw, query)}</div>
+    ${reminderBlock}
+  `;
+}
+
+// ─── SEARCH ────────────────────────────────────────────────────────────────
+const searchBox   = document.getElementById('searchBox');
+const resultsBox  = document.getElementById('searchResults');
+const clearBtn    = document.getElementById('clearBtn');
+const resultCount = document.getElementById('resultCount');
+
+let currentQuery = '';
+
+searchBox.addEventListener('input', function(){
+  currentQuery = this.value.trim();
+  clearBtn.style.display = currentQuery ? 'block' : 'none';
+  runSearch(currentQuery);
+});
+
+clearBtn.addEventListener('click', function(){
+  searchBox.value = '';
+  currentQuery = '';
+  clearBtn.style.display = 'none';
+  resultsBox.style.display = 'none';
+  resultCount.textContent = '';
+  resetCards();
+  searchBox.focus();
+});
+
+function runSearch(query){
+  const q = query.toLowerCase();
+
+  if(q.length < 2){
+    resultsBox.style.display = 'none';
+    resultCount.textContent = '';
+    resetCards();
+    return;
+  }
+
+  let visible = 0;
+  const dropItems = [];
+
+  allCards.forEach(({el, searchText}) => {
+    const match = searchText.includes(q);
+    el.style.display = match ? '' : 'none';
+    if(match){
+      visible++;
+      const row = JSON.parse(el.dataset.row);
+      el.innerHTML = cardHTML(row, query);
+      dropItems.push(row);
+    }
+  });
+
+  // update count
+  resultCount.textContent = visible === 0
+    ? 'No results found.'
+    : `${visible.toLocaleString()} categor${visible===1?'y':'ies'} found`;
+
+  // dropdown (top 8 only, for quick scroll-to)
+  renderDropdown(dropItems.slice(0, 8), query);
+
+  // no results message
+  if(visible === 0){
+    output.innerHTML = `<div class="no-results"><span>🔍</span>No categories match "<b>${esc(query)}</b>".<br>Try a different keyword or LNCID.</div>`;
+  }
+}
+
+function resetCards(){
+  // if no-results placeholder exists, rebuild
+  if(output.querySelector('.no-results')) buildCards();
+  allCards.forEach(({el}) => {
+    el.style.display = '';
+    const row = JSON.parse(el.dataset.row);
+    el.innerHTML = cardHTML(row, '');
+  });
+}
+
+// ─── DROPDOWN ────────────────────────────────────────────────────────────────
+function renderDropdown(rows, query){
+  if(rows.length === 0){ resultsBox.style.display = 'none'; return; }
+
+  resultsBox.innerHTML = rows.map(row => `
+    <div class="result-item" data-id="${esc(row['LNC ID'])}">
+      <div class="result-id">LNCID: ${esc(row['LNC ID'])}</div>
+      <div class="result-category">${highlight(row['Category Name (English)'], query)}</div>
+    </div>
+  `).join('');
+  resultsBox.style.display = 'block';
+}
+
+resultsBox.addEventListener('click', function(e){
+  const item = e.target.closest('.result-item');
+  if(!item) return;
+
+  const id = item.dataset.id;
+  const target = allCards.find(c => c.el.dataset.id === id);
+  if(!target) return;
+
+  resultsBox.style.display = 'none';
+  searchBox.blur();
+
+  target.el.scrollIntoView({ behavior:'smooth', block:'center' });
+
+  // pulse animation
+  setTimeout(() => {
+    let count = 0;
+    function pulse(){
+      if(count >= 3) return;
+      target.el.classList.remove('active-highlight');
+      void target.el.offsetWidth;
+      target.el.classList.add('active-highlight');
+      count++;
+      setTimeout(pulse, 700);
+    }
+    pulse();
+  }, 350);
+});
+
+// close dropdown on outside click
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.search-wrap')) resultsBox.style.display = 'none';
+});
+searchBox.addEventListener('focus', function(){
+  if(currentQuery.length >= 2) resultsBox.style.display = 'block';
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+buildCards();
+showToast(`✓ ${ckData.length.toLocaleString()} categories loaded`, 'success');
+</script>
+</body>
+</html>
