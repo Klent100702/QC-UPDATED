@@ -93,29 +93,75 @@ body::after{content:'';position:fixed;width:500px;height:500px;background:#0066f
 .reminder-label{font-size:10px;font-family:monospace;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#ff9a2e;margin-bottom:5px;}
 .reminder-text{font-size:12.5px;color:#ffd9a8;line-height:1.65;white-space:pre-wrap;}
 
-/* ─── COMPILATION CARD ─── */
-.comp-card{
-  position:relative;overflow:hidden;
-  background:rgba(99,102,241,.08);backdrop-filter:blur(20px);
-  border-radius:20px;padding:22px;
-  border:1px solid rgba(99,102,241,.25);transition:.3s;animation:fadeUp .4s ease;
+/* ─── COMPILATION SECTION HEADER ─── */
+.comp-section-header{
+  display:flex;align-items:center;gap:12px;
+  margin:40px 0 16px;
+  padding-bottom:12px;
+  border-bottom:2px solid rgba(99,102,241,.3);
 }
-.comp-card::before{content:'';position:absolute;width:200px;height:200px;background:rgba(99,102,241,.07);border-radius:50%;top:-110px;right:-110px;}
-.comp-card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,.5);box-shadow:0 10px 32px rgba(0,0,0,.4);}
-
-.comp-badge{
-  display:inline-block;margin-bottom:10px;
-  background:rgba(99,102,241,.3);border:1px solid rgba(99,102,241,.5);
-  color:#a5b4fc;font-size:10px;font-family:monospace;font-weight:700;
-  text-transform:uppercase;letter-spacing:.07em;
+.comp-section-title{
+  font-size:16px;font-weight:700;color:#a5b4fc;letter-spacing:.01em;
+}
+.comp-section-count{
+  font-size:12px;font-family:monospace;
+  color:#6b7280;
+  background:rgba(99,102,241,.15);
   padding:3px 10px;border-radius:20px;
 }
-.comp-keyword{font-size:16px;font-weight:800;color:#fff;margin-bottom:14px;line-height:1.4;}
+
+/* ─── COMPILATION GRID ─── */
+#compOutput{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(560px,1fr));
+  gap:16px;
+}
+
+/* ─── COMPILATION CARD — SIDEBAR LAYOUT ─── */
+.comp-card{
+  position:relative;overflow:hidden;
+  background:rgba(99,102,241,.07);backdrop-filter:blur(20px);
+  border-radius:20px;
+  border:1px solid rgba(99,102,241,.22);transition:.3s;animation:fadeUp .4s ease;
+  display:flex;                /* horizontal split */
+  min-height:120px;
+}
+.comp-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(99,102,241,.45);
+  box-shadow:0 10px 32px rgba(0,0,0,.35);
+}
+
+/* LEFT — product keyword */
+.comp-left{
+  flex:1;
+  padding:20px;
+  border-right:1px solid rgba(99,102,241,.18);
+  display:flex;flex-direction:column;justify-content:center;
+}
+.comp-badge{
+  display:inline-block;margin-bottom:8px;
+  background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.45);
+  color:#a5b4fc;font-size:9.5px;font-family:monospace;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;
+  padding:2px 9px;border-radius:20px;
+}
+.comp-keyword{
+  font-size:15px;font-weight:800;color:#fff;line-height:1.4;
+}
+
+/* RIGHT SIDEBAR — categories + notes */
+.comp-right{
+  width:280px;flex:none;
+  padding:16px 18px;
+  display:flex;flex-direction:column;gap:10px;
+  background:rgba(0,0,0,.12);
+}
 
 .comp-section-label{
-  font-size:10px;font-family:monospace;font-weight:700;
+  font-size:9.5px;font-family:monospace;font-weight:700;
   text-transform:uppercase;letter-spacing:.07em;
-  margin-bottom:6px;margin-top:12px;
+  margin-bottom:4px;display:block;
 }
 .comp-section-label.best{color:#34d399;}
 .comp-section-label.acceptable{color:#60a5fa;}
@@ -123,18 +169,39 @@ body::after{content:'';position:fixed;width:500px;height:500px;background:#0066f
 
 .comp-list{list-style:none;margin:0;padding:0;}
 .comp-list li{
-  font-size:13px;line-height:1.6;color:#d1d5db;
-  padding:3px 0 3px 12px;border-left:2px solid;
+  font-size:12px;line-height:1.55;
+  padding:2px 0 2px 10px;border-left:2px solid;margin-bottom:2px;
 }
 .comp-list.best-list li{border-color:#34d399;color:#a7f3d0;}
 .comp-list.acceptable-list li{border-color:#60a5fa;color:#bfdbfe;}
 
 .comp-notes{
-  margin-top:12px;border:1.5px solid #f59e0b;border-radius:10px;
-  background:rgba(245,158,11,.08);padding:10px 13px;
+  border-top:1px solid rgba(245,158,11,.2);
+  padding-top:8px;
 }
-.comp-notes-label{font-size:10px;font-family:monospace;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#f59e0b;margin-bottom:5px;}
-.comp-notes-text{font-size:12.5px;color:#fde68a;line-height:1.65;white-space:pre-wrap;}
+.comp-notes-text{font-size:11.5px;color:#fde68a;line-height:1.6;white-space:pre-wrap;}
+
+/* ─── LIGHT MODE — compilation ─── */
+body.light .comp-section-title{color:#4f46e5;}
+body.light .comp-section-count{color:#6b7280;background:rgba(99,102,241,.1);}
+body.light .comp-section-header{border-bottom-color:rgba(99,102,241,.2);}
+body.light .comp-card{background:rgba(238,239,255,.9);border-color:rgba(99,102,241,.25);}
+body.light .comp-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);}
+body.light .comp-left{border-right-color:rgba(99,102,241,.15);}
+body.light .comp-keyword{color:#1e1b4b;}
+body.light .comp-right{background:rgba(99,102,241,.06);}
+body.light .comp-list.best-list li{color:#065f46;}
+body.light .comp-list.acceptable-list li{color:#1e40af;}
+body.light .comp-notes-text{color:#78350f;}
+body.light .comp-notes{border-top-color:rgba(245,158,11,.2);}
+
+/* ─── MOBILE — stack sidebar vertically ─── */
+@media(max-width:700px){
+  .comp-card{flex-direction:column;}
+  .comp-left{border-right:none;border-bottom:1px solid rgba(99,102,241,.18);}
+  .comp-right{width:100%;}
+  #compOutput{grid-template-columns:1fr;}
+}
 
 /* ─── HIGHLIGHT ─── */
 mark{background:#ffe066;color:#000;padding:1px 5px;border-radius:5px;font-weight:800;box-shadow:0 0 10px rgba(255,224,102,.5);}
@@ -278,6 +345,15 @@ body.light .theme-btn:hover{background:rgba(0,0,0,.14);}
 <div class="container">
   <div id="output"></div>
   <div id="noResults" class="no-results" style="display:none;"></div>
+
+  <!-- COMPILATION SECTION — always below category results -->
+  <div id="compSection">
+    <div class="comp-section-header">
+      <span class="comp-section-title">📋 Product Type Reference</span>
+      <span class="comp-section-count" id="compCount"></span>
+    </div>
+    <div id="compOutput"></div>
+  </div>
 </div>
 
 <div id="toast" class="toast"></div>
@@ -338,13 +414,17 @@ function scoreMatch(row, q){
 
 // ─── BUILD ALL ITEMS ───────────────────────────────────────────────────────
 const output      = document.getElementById('output');
+const compOutput  = document.getElementById('compOutput');
+const compSection = document.getElementById('compSection');
+const compCount   = document.getElementById('compCount');
 const noResults   = document.getElementById('noResults');
 const resultsBox  = document.getElementById('searchResults');
 const clearBtn    = document.getElementById('clearBtn');
 const resultCount = document.getElementById('resultCount');
 const searchBox   = document.getElementById('searchBox');
 
-let allItems = [];  // { el, row, score(set during search), type }
+let catItems  = [];
+let compItems = [];
 
 // ─── CATEGORY CARD HTML ───────────────────────────────────────────────────
 function catCardHTML(row, query){
@@ -376,35 +456,41 @@ function compCardHTML(row, query){
     `<li>${highlight(b, query)}</li>`).join('');
   const acceptList = (row.acceptable||[]).map(a =>
     `<li>${highlight(a, query)}</li>`).join('');
-  const notesBlock = row.notes ? `
-    <div class="comp-notes">
-      <div class="comp-notes-label">★ Note</div>
-      <div class="comp-notes-text">${highlight(row.notes, query)}</div>
-    </div>` : '';
 
   const bestBlock = bestList ? `
-    <div class="comp-section-label best">✓ Best Category</div>
+    <span class="comp-section-label best">✓ Best Category</span>
     <ul class="comp-list best-list">${bestList}</ul>` : '';
 
   const acceptBlock = acceptList ? `
-    <div class="comp-section-label acceptable">◎ Acceptable Categories</div>
+    <span class="comp-section-label acceptable">◎ Acceptable</span>
     <ul class="comp-list acceptable-list">${acceptList}</ul>` : '';
 
+  const notesBlock = row.notes ? `
+    <div class="comp-notes">
+      <span class="comp-section-label notes-label">★ Note</span>
+      <div class="comp-notes-text">${highlight(row.notes, query)}</div>
+    </div>` : '';
+
   return `
-    <span class="comp-badge">Product Type Reference</span>
-    <div class="comp-keyword">${highlight(row.keywords, query)}</div>
-    ${bestBlock}
-    ${acceptBlock}
-    ${notesBlock}
+    <div class="comp-left">
+      <span class="comp-badge">Product Type</span>
+      <div class="comp-keyword">${highlight(row.keywords, query)}</div>
+    </div>
+    <div class="comp-right">
+      ${bestBlock}
+      ${acceptBlock}
+      ${notesBlock}
+    </div>
   `;
 }
 
 // ─── BUILD DOM ────────────────────────────────────────────────────────────
 function buildAll(){
   output.innerHTML = '';
-  allItems = [];
+  compOutput.innerHTML = '';
+  catItems  = [];
+  compItems = [];
 
-  // Category cards
   ckData.forEach(row => {
     const hasReminder = (row['Reminder']||'').trim().length > 0;
     const el = document.createElement('div');
@@ -414,20 +500,21 @@ function buildAll(){
     el.dataset.row  = JSON.stringify(row);
     el.innerHTML = catCardHTML(row, '');
     output.appendChild(el);
-    allItems.push({ el, row, type:'category' });
+    catItems.push({ el, row, type:'category' });
   });
 
-  // Compilation cards
   compilationData.forEach(row => {
     const el = document.createElement('div');
     el.className = 'comp-card';
     el.dataset.type = 'compilation';
-    el.dataset.id   = 'comp-' + row.keywords.slice(0,20);
+    el.dataset.id   = 'comp-' + row.keywords.slice(0, 30);
     el.dataset.row  = JSON.stringify(row);
     el.innerHTML = compCardHTML(row, '');
-    output.appendChild(el);
-    allItems.push({ el, row, type:'compilation' });
+    compOutput.appendChild(el);
+    compItems.push({ el, row, type:'compilation' });
   });
+
+  compCount.textContent = `${compilationData.length} entries`;
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────────────────
@@ -459,45 +546,59 @@ function runSearch(query){
     return;
   }
 
-  // Score every item
-  const scored = [];
-  allItems.forEach(item => {
+  // ── Category cards ──
+  const scoredCats = [];
+  catItems.forEach(item => {
     const s = scoreMatch(item.row, q);
-    if(s >= 0){
-      item.el.style.display = 'none';   // hide all first; will show in order
-      scored.push({ ...item, score: s });
-    } else {
-      item.el.style.display = 'none';
-    }
+    item.el.style.display = 'none';
+    if(s >= 0) scoredCats.push({ ...item, score: s });
   });
-
-  // Sort by relevance score descending
-  scored.sort((a, b) => b.score - a.score);
-
-  // Re-append to output in sorted order and re-render with highlights
-  scored.forEach(item => {
+  scoredCats.sort((a, b) => b.score - a.score);
+  scoredCats.forEach(item => {
     const row = JSON.parse(item.el.dataset.row);
-    item.el.innerHTML = item.type === 'category'
-      ? catCardHTML(row, query)
-      : compCardHTML(row, query);
+    item.el.innerHTML = catCardHTML(row, query);
     item.el.style.display = '';
-    output.appendChild(item.el);   // moves to end = sorted order
+    output.appendChild(item.el);
   });
 
-  const visible = scored.length;
-  resultCount.textContent = visible === 0
+  // ── Compilation cards ──
+  const scoredComp = [];
+  compItems.forEach(item => {
+    const s = scoreMatch(item.row, q);
+    item.el.style.display = 'none';
+    if(s >= 0) scoredComp.push({ ...item, score: s });
+  });
+  scoredComp.sort((a, b) => b.score - a.score);
+  scoredComp.forEach(item => {
+    const row = JSON.parse(item.el.dataset.row);
+    item.el.innerHTML = compCardHTML(row, query);
+    item.el.style.display = '';
+    compOutput.appendChild(item.el);
+  });
+
+  const catVisible  = scoredCats.length;
+  const compVisible = scoredComp.length;
+  const total = catVisible + compVisible;
+
+  resultCount.textContent = total === 0
     ? 'No results found.'
-    : `${visible.toLocaleString()} result${visible===1?'':'s'} found`;
+    : `${catVisible} categor${catVisible===1?'y':'ies'} · ${compVisible} product type${compVisible===1?'':'s'} found`;
 
-  noResults.style.display = visible === 0 ? 'flex' : 'none';
-  if(visible === 0) noResults.innerHTML = `<span>🔍</span>No results for "<b>${esc(query)}</b>".<br>Try a different keyword or LNCID.`;
+  noResults.style.display = total === 0 ? 'flex' : 'none';
+  if(total === 0) noResults.innerHTML = `<span>🔍</span>No results for "<b>${esc(query)}</b>".<br>Try a different keyword or LNCID.`;
 
-  // Dropdown: top 8, showing best matches first
-  renderDropdown(scored.slice(0, 8), query);
+  compCount.textContent = compVisible > 0
+    ? `${compVisible} match${compVisible===1?'':'es'}`
+    : `${compilationData.length} entries`;
+
+  const dropItems = [
+    ...scoredCats.slice(0, 6),
+    ...scoredComp.slice(0, 3)
+  ];
+  renderDropdown(dropItems, query);
 }
 
 function resetAll(){
-  // Restore original DOM order by rebuild
   buildAll();
 }
 
@@ -529,7 +630,8 @@ resultsBox.addEventListener('click', function(e){
 
   const id   = item.dataset.id;
   const type = item.dataset.type;
-  const target = allItems.find(i => i.el.dataset.id === id && i.el.dataset.type === type);
+  const pool = type === 'compilation' ? compItems : catItems;
+  const target = pool.find(i => i.el.dataset.id === id);
   if(!target || target.el.style.display === 'none') return;
 
   resultsBox.style.display = 'none';
