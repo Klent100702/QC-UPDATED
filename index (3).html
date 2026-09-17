@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPTxWC — Wrong Category Search</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family:'Inter',sans-serif;font-size:14px;
+  background:radial-gradient(circle at top left,#1b2735,#090a0f 50%);
+  color:white;overflow-x:hidden;
+}
+body::before{content:'';position:fixed;width:600px;height:600px;background:#ff7a001f;filter:blur(120px);top:-250px;right:-150px;z-index:-2;}
+body::after{content:'';position:fixed;width:500px;height:500px;background:#0066ff1f;filter:blur(120px);bottom:-250px;left:-150px;z-index:-2;}
+
+/* ─── HEADER ─── */
+.header{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  width:95%;max-width:960px;padding:22px 26px;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);border-radius:24px;
+  z-index:9999;box-shadow:0 10px 40px rgba(0,0,0,.45);
+}
+.banner{
+  background:linear-gradient(120deg,#ff9a2e,#ff7a1a 55%,#ff6a3d);
+  border-radius:14px;padding:18px 22px;
+  margin-bottom:18px;box-shadow:0 8px 28px rgba(255,122,26,.22);
+  position:relative;
+  display:flex;align-items:center;gap:16px;
+}
+.banner-logo{
+  width:64px;height:64px;border-radius:50%;
+  flex:none;
+  box-shadow:0 0 16px rgba(0,0,0,.4);
+}
+.banner-text{flex:1;text-align:center;}
+.banner h1{font-size:24px;font-weight:800;color:#fff;border-bottom:2px solid rgba(255,255,255,.5);display:inline-block;padding-bottom:5px;}
+.banner .sub{margin-top:6px;font-size:13px;color:rgba(255,255,255,.9);}
+.banner .credit{position:absolute;bottom:7px;right:12px;font-size:10.5px;color:rgba(255,255,255,.55);font-family:monospace;letter-spacing:.04em;}
+
+/* ─── SEARCH ─── */
+.search-wrap{position:relative;width:100%;}
+#searchBox{
+  width:100%;padding:16px 48px 16px 18px;border:none;outline:none;
+  border-radius:14px;background:rgba(255,255,255,.08);backdrop-filter:blur(20px);
+  color:white;font-size:15px;border:1px solid rgba(255,255,255,.08);transition:.3s;
+}
+#searchBox:focus{border-color:#ff7a00;box-shadow:0 0 25px rgba(255,122,0,.22);}
+#searchBox::placeholder{color:#9aa4b2;}
+.clear-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#9aa4b2;font-size:18px;
+  cursor:pointer;display:none;line-height:1;transition:color .2s;
+}
+.clear-btn:hover{color:#fff;}
+.result-count{margin-top:8px;font-size:12px;color:#9aa4b2;text-align:right;min-height:16px;}
+
+/* dropdown */
+#searchResults{
+  position:absolute;top:100%;left:0;width:100%;margin-top:6px;
+  background:#111827;border-radius:14px;overflow:hidden;
+  max-height:260px;overflow-y:auto;z-index:1000;
+  border:1px solid rgba(255,255,255,.08);box-shadow:0 15px 40px rgba(0,0,0,.55);display:none;
+}
+.result-item{padding:12px 16px;cursor:pointer;transition:.2s;border-bottom:1px solid rgba(255,255,255,.05);}
+.result-item:hover{background:#1f2937;}
+.result-item.result-compilation{border-left:3px solid #6366f1;}
+.result-id{font-size:13px;font-weight:700;color:white;}
+.result-category{margin-top:3px;font-size:11.5px;color:#9aa4b2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ─── TWO-COLUMN LAYOUT ─── */
+.page-layout{
+  display:flex;
+  align-items:flex-start;
+  gap:20px;
+  padding-top:260px;
+  padding-left:20px;
+  padding-right:20px;
+  padding-bottom:100px;
+  max-width:1600px;
+  margin:0 auto;
+}
+
+/* LEFT: category cards */
+.main-col{
+  flex:1;
+  min-width:0;
+}
+
+#output{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+  gap:20px;
+}
+
+/* RIGHT: compilation sidebar */
+.sidebar-col{
+  width:360px;
+  flex:none;
+  position:sticky;
+  top:260px;
+  max-height:calc(100vh - 300px);
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(99,102,241,.3) transparent;
+}
+.sidebar-col::-webkit-scrollbar{width:5px;}
+.sidebar-col::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:4px;}
+
+.sidebar-header{
+  position:sticky;
+  top:0;
+  background:#0f1117;
+  padding:12px 0 10px;
+  margin-bottom:12px;
+  border-bottom:2px solid rgba(99,102,241,.3);
+  z-index:10;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.sidebar-title{
+  font-size:13.5px;font-weight:700;color:#a5b4fc;
+}
+.comp-section-count{
+  font-size:11px;font-family:monospace;color:#6b7280;
+  background:rgba(99,102,241,.15);padding:2px 9px;border-radius:20px;
+}
+
+/* COMPILATION CARDS in sidebar — stacked vertically, narrower */
+#compOutput{
+  display:flex;flex-direction:column;gap:12px;
+}
+
+/* ─── CATEGORY CARD ─── */
+.data-card{
+  position:relative;overflow:hidden;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(20px);
+  border-radius:20px;padding:22px;
+  border:1px solid rgba(255,255,255,.07);transition:.3s;animation:fadeUp .4s ease;
+}
+.data-card::before{content:'';position:absolute;width:200px;height:200px;background:rgba(255,122,0,.07);border-radius:50%;top:-110px;right:-110px;}
+.data-card:hover{transform:translateY(-4px);border-color:rgba(255,122,0,.3);box-shadow:0 10px 32px rgba(0,0,0,.4);}
+.data-card.has-reminder{border-color:rgba(255,122,0,.22);}
+
+.card-lncid{font-size:12px;font-family:monospace;color:#9aa4b2;margin-bottom:6px;letter-spacing:.04em;}
+.card-lncid span{color:#ff9a2e;font-weight:700;}
+.card-name{font-size:15px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:4px;}
+.card-name-zh{font-size:11.5px;color:#6b7280;margin-bottom:10px;}
+.card-kw-label{font-size:10.5px;font-family:monospace;text-transform:uppercase;letter-spacing:.07em;color:#9aa4b2;margin-bottom:5px;}
+.card-kw{font-size:13px;color:#d1d5db;line-height:1.7;}
+
+/* reminder box on category cards */
+.reminder-box{
+  margin-top:12px;border:1.5px solid #ff7a00;border-radius:10px;
+  background:rgba(255,122,0,.10);padding:10px 13px;
+}
+.reminder-label{font-size:10px;font-family:monospace;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#ff9a2e;margin-bottom:5px;}
+.reminder-text{font-size:12.5px;color:#ffd9a8;line-height:1.65;white-space:pre-wrap;}
+
+/* ─── COMPILATION SECTION HEADER (old, kept for compat) ─── */
+.comp-section-header{display:none;}
+.comp-section-title{display:none;}
+
+/* ─── COMPILATION CARD in sidebar ─── */
+.comp-card{
+  position:relative;overflow:hidden;
+  background:rgba(99,102,241,.08);backdrop-filter:blur(12px);
+  border-radius:14px;
+  border:1px solid rgba(99,102,241,.22);transition:.25s;
+  animation:fadeUp .4s ease;
+}
+.comp-card:hover{
+  border-color:rgba(99,102,241,.45);
+  box-shadow:0 6px 22px rgba(0,0,0,.3);
+  transform:translateY(-2px);
+}
+
+/* TOP: keyword */
+.comp-left{
+  padding:14px 14px 10px;
+  border-bottom:1px solid rgba(99,102,241,.15);
+}
+.comp-badge{
+  display:inline-block;margin-bottom:6px;
+  background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.4);
+  color:#a5b4fc;font-size:9px;font-family:monospace;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;
+  padding:2px 8px;border-radius:20px;
+}
+.comp-keyword{
+  font-size:13px;font-weight:800;color:#fff;line-height:1.35;
+}
+
+/* BOTTOM: best / acceptable / notes */
+.comp-right{
+  padding:10px 14px 12px;
+  display:flex;flex-direction:column;gap:7px;
+}
+
+.comp-section-label{
+  font-size:9px;font-family:monospace;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;
+  margin-bottom:3px;display:block;
+}
+.comp-section-label.best{color:#34d399;}
+.comp-section-label.acceptable{color:#60a5fa;}
+.comp-section-label.notes-label{color:#f59e0b;}
+
+.comp-list{list-style:none;margin:0;padding:0;}
+.comp-list li{
+  font-size:11.5px;line-height:1.5;
+  padding:2px 0 2px 8px;border-left:2px solid;margin-bottom:2px;
+}
+.comp-list.best-list li{border-color:#34d399;color:#a7f3d0;}
+.comp-list.acceptable-list li{border-color:#60a5fa;color:#bfdbfe;}
+
+.comp-notes{border-top:1px solid rgba(245,158,11,.18);padding-top:7px;}
+.comp-notes-text{font-size:11px;color:#fde68a;line-height:1.55;white-space:pre-wrap;}
+
+/* ─── LIGHT MODE sidebar ─── */
+body.light .sidebar-header{background:#f3f4f8;}
+body.light .sidebar-title{color:#4f46e5;}
+body.light .comp-section-count{color:#6b7280;background:rgba(99,102,241,.1);}
+body.light .sidebar-header{border-bottom-color:rgba(99,102,241,.2);}
+body.light .comp-card{background:rgba(238,239,255,.9);border-color:rgba(99,102,241,.25);}
+body.light .comp-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.1);}
+body.light .comp-left{border-bottom-color:rgba(99,102,241,.12);}
+body.light .comp-keyword{color:#1e1b4b;}
+body.light .comp-list.best-list li{color:#065f46;}
+body.light .comp-list.acceptable-list li{color:#1e40af;}
+body.light .comp-notes-text{color:#78350f;}
+
+/* ─── HIGHLIGHT ─── */
+mark{background:#ffe066;color:#000;padding:1px 5px;border-radius:5px;font-weight:800;box-shadow:0 0 10px rgba(255,224,102,.5);}
+
+/* ─── NO RESULTS ─── */
+.no-results{text-align:center;padding:60px 20px;color:#6b7280;font-size:15px;flex-direction:column;align-items:center;justify-content:center;}
+.no-results span{font-size:36px;display:block;margin-bottom:12px;}
+
+/* ─── PULSE ─── */
+.active-highlight{animation:popHighlight .6s ease;}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:13px 22px;border-radius:13px;color:white;display:none;backdrop-filter:blur(20px);z-index:99999;font-size:13.5px;}
+.toast.success{background:rgba(40,167,69,.9);}
+.toast.error{background:rgba(220,53,69,.9);}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes popHighlight{
+  0%{transform:scale(1);box-shadow:0 0 0 rgba(255,122,0,0);}
+  50%{transform:scale(1.02);box-shadow:0 0 35px rgba(255,122,0,.5),0 0 70px rgba(255,122,0,.15);}
+  100%{transform:scale(1);box-shadow:0 0 0 rgba(255,122,0,0);}
+}
+
+/* ─── MOBILE ─── */
+@media(max-width:900px){
+  #output{grid-template-columns:1fr;}
+  .header{width:92%;}
+  .banner h1{font-size:19px;}
+}
+
+/* ─── AUDIT SECTION ─── */
+.audit-section-header{
+  margin-top:20px;
+  padding:12px 0 10px;
+  border-bottom:2px solid rgba(251,191,36,.25);
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.audit-section-header .sidebar-title{color:#fbbf24;}
+.audit-section-header .comp-section-count{background:rgba(251,191,36,.12);}
+
+.audit-card{
+  border-radius:13px;
+  border:1px solid rgba(251,191,36,.2);
+  background:rgba(251,191,36,.05);
+  margin-bottom:10px;
+  overflow:hidden;
+  transition:.25s;
+  animation:fadeUp .4s ease;
+}
+.audit-card:hover{
+  border-color:rgba(251,191,36,.4);
+  box-shadow:0 5px 18px rgba(0,0,0,.3);
+  transform:translateY(-2px);
+}
+.audit-top{
+  padding:12px 13px 8px;
+  border-bottom:1px solid rgba(251,191,36,.12);
+}
+.audit-type{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:9px;font-family:monospace;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;
+  padding:2px 8px;border-radius:20px;margin-bottom:7px;
+}
+.audit-type.deboosted{
+  background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.35);color:#fca5a5;
+}
+.audit-type.passed{
+  background:rgba(234,179,8,.2);border:1px solid rgba(234,179,8,.35);color:#fde68a;
+}
+.audit-cats{font-size:11px;color:#d1d5db;line-height:1.55;}
+.audit-cats .cat-from{color:#9ca3af;}
+.audit-cats .cat-arrow{color:#6b7280;margin:0 5px;}
+.audit-cats .cat-to{color:#fca5a5;}
+
+.audit-lesson{
+  padding:10px 13px 11px;
+  font-size:11.5px;color:#e5e7eb;
+  line-height:1.65;
+}
+.audit-feedback{
+  margin:0 13px 11px;
+  padding:8px 10px;
+  border-radius:8px;
+  border-left:3px solid #60a5fa;
+  background:rgba(96,165,250,.08);
+  font-size:11px;color:#bfdbfe;line-height:1.55;
+}
+.audit-fb-label{
+  font-size:9px;font-family:monospace;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:#60a5fa;margin-bottom:4px;display:block;
+}
+
+/* light mode audit */
+body.light .audit-section-header{border-bottom-color:rgba(251,191,36,.3);}
+body.light .audit-card{background:rgba(254,249,195,.5);border-color:rgba(202,138,4,.2);}
+body.light .audit-card:hover{border-color:rgba(202,138,4,.4);box-shadow:0 5px 16px rgba(0,0,0,.1);}
+body.light .audit-top{border-bottom-color:rgba(202,138,4,.12);}
+body.light .audit-cats{color:#374151;}
+body.light .audit-cats .cat-from{color:#6b7280;}
+body.light .audit-cats .cat-to{color:#dc2626;}
+body.light .audit-lesson{color:#1f2937;}
+body.light .audit-feedback{background:rgba(96,165,250,.06);color:#1e3a5f;}
+
+/* ─── THEME TOGGLE BUTTON ─── */
+.theme-btn{
+  position:fixed;bottom:28px;right:28px;
+  width:46px;height:46px;border-radius:50%;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(20px);
+  color:white;font-size:20px;
+  cursor:pointer;z-index:99998;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .25s;
+  box-shadow:0 4px 18px rgba(0,0,0,.35);
+}
+.theme-btn:hover{
+  background:rgba(255,255,255,.22);
+  transform:scale(1.1);
+}
+
+/* ─── LIGHT MODE ─── */
+body.light{
+  background:#f3f4f8;
+  color:#111827;
+}
+body.light::before{background:#ff7a0012;}
+body.light::after{background:#0066ff0d;}
+
+body.light .header{
+  background:rgba(255,255,255,.85);
+  border-color:rgba(0,0,0,.08);
+  box-shadow:0 8px 32px rgba(0,0,0,.10);
+}
+
+body.light #searchBox{
+  background:rgba(0,0,0,.05);
+  color:#111827;
+  border-color:rgba(0,0,0,.10);
+}
+body.light #searchBox::placeholder{color:#6b7280;}
+body.light #searchBox:focus{border-color:#ff7a00;box-shadow:0 0 20px rgba(255,122,0,.15);}
+body.light .clear-btn{color:#6b7280;}
+body.light .clear-btn:hover{color:#111827;}
+body.light .result-count{color:#6b7280;}
+
+body.light #searchResults{
+  background:#ffffff;
+  border-color:rgba(0,0,0,.10);
+  box-shadow:0 12px 32px rgba(0,0,0,.12);
+}
+body.light .result-item{border-bottom-color:rgba(0,0,0,.06);}
+body.light .result-item:hover{background:#f9fafb;}
+body.light .result-id{color:#111827;}
+body.light .result-category{color:#6b7280;}
+
+body.light .data-card{
+  background:rgba(255,255,255,.9);
+  border-color:rgba(0,0,0,.08);
+  box-shadow:0 2px 12px rgba(0,0,0,.06);
+}
+body.light .data-card:hover{
+  border-color:rgba(255,122,0,.4);
+  box-shadow:0 8px 28px rgba(0,0,0,.12);
+}
+body.light .data-card.has-reminder{border-color:rgba(255,122,0,.35);}
+body.light .card-lncid{color:#6b7280;}
+body.light .card-name{color:#111827;}
+body.light .card-name-zh{color:#9ca3af;}
+body.light .card-kw-label{color:#6b7280;}
+body.light .card-kw{color:#374151;}
+body.light .reminder-text{color:#92400e;}
+body.light .reminder-box{background:rgba(255,122,0,.08);}
+
+body.light .comp-card{
+  background:rgba(238,239,255,.85);
+  border-color:rgba(99,102,241,.3);
+  box-shadow:0 2px 12px rgba(0,0,0,.06);
+}
+body.light .comp-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.12);}
+body.light .comp-keyword{color:#1e1b4b;}
+body.light .comp-list.best-list li{color:#065f46;}
+body.light .comp-list.acceptable-list li{color:#1e40af;}
+body.light .comp-notes{background:rgba(245,158,11,.08);}
+body.light .comp-notes-text{color:#78350f;}
+
+body.light .no-results{color:#6b7280;}
+body.light .theme-btn{
+  background:rgba(0,0,0,.08);
+  border-color:rgba(0,0,0,.14);
+  color:#374151;
+  box-shadow:0 4px 18px rgba(0,0,0,.12);
+}
+body.light .theme-btn:hover{background:rgba(0,0,0,.14);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="banner">
+    <img src="data:image/png;base64,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" class="banner-logo" alt="SZ Logo">
+    <div class="banner-text">
+      <h1>SupportZebra X Shopee Taiwan</h1>
+      <div class="sub">Wrong Category | Search Engine</div>
+    </div>
+    <div class="credit">by KJJM</div>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="searchBox" placeholder="Search by keyword, category name, LNCID, or product type…" autocomplete="off">
+    <button class="clear-btn" id="clearBtn" title="Clear">✕</button>
+    <div id="searchResults"></div>
+  </div>
+  <div class="result-count" id="resultCount"></div>
+</div>
+
+<div class="page-layout">
+
+  <!-- MAIN: category results -->
+  <div class="main-col">
+    <div id="output"></div>
+    <div id="noResults" class="no-results" style="display:none;"></div>
+  </div>
+
+  <!-- SIDEBAR: compilation panel -->
+  <div class="sidebar-col" id="compSection">
+    <div class="sidebar-header">
+      <span class="sidebar-title">📋 Product Type Reference</span>
+      <span class="comp-section-count" id="compCount"></span>
+    </div>
+    <div id="compOutput"></div>
+
+    <!-- AUDIT CASES section inside sidebar -->
+    <div class="audit-section-header" id="auditHeader">
+      <span class="sidebar-title">⚠️ Past Audit Cases</span>
+      <span class="comp-section-count" id="auditCount"></span>
+    </div>
+    <div id="auditOutput"></div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+<button class="theme-btn" id="themeBtn" title="Toggle light/dark mode">☀️</button>
+
+<script src="ck.js"></script>
+<script src="compilation.js"></script>
+<script src="audit.js"></script>
+
+<script>
+// ─── HELPERS ───────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type; t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+function highlight(text, query){
+  if(!query) return esc(text);
+  const escaped = esc(text);
+  const regex = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+  return escaped.replace(regex, '<mark>$1</mark>');
+}
+
+// Normalize text for matching: lowercase, & → space, collapse spaces
+function norm(s){
+  return (s||'').toLowerCase().replace(/&/g,' ').replace(/\s+/g,' ').trim();
+}
+
+// Score a match: higher = more relevant
+// Name match scores higher than keyword-only match
+function scoreMatch(row, q){
+  const nameNorm = norm(row['Category Name (English)'] || row['keywords'] || '');
+  const kwNorm   = norm(row['English Keyword'] || '');
+  const fullNorm = norm([
+    row['LNC ID']||'', row['Category Name (English)']||'', row['Category Name (中文)']||'',
+    row['English Keyword']||'', row['Reminder']||'',
+    // compilation fields
+    row['keywords']||'', (row['best']||[]).join(' '), (row['acceptable']||[]).join(' '), row['notes']||'',
+    // audit fields
+    row['user_category']||'', row['reviewer_category']||'', row['lesson']||'', row['sz_feedback']||'', row['error_type']||''
+  ].join(' '));
+
+  if(!fullNorm.includes(q)) return -1;
+
+  let score = 1;
+  if(nameNorm.includes(q)) score += 10;
+  if(nameNorm.startsWith(q)) score += 5;
+  if(kwNorm.includes(q)) score += 3;
+  // for audit: boost if category name matches
+  const auditCatNorm = norm((row['user_category']||'') + ' ' + (row['reviewer_category']||''));
+  if(auditCatNorm.includes(q)) score += 8;
+  const wordBound = new RegExp('(^| )' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '( |$)');
+  if(wordBound.test(nameNorm)) score += 4;
+
+  return score;
+}
+
+// ─── BUILD ALL ITEMS ───────────────────────────────────────────────────────
+const output      = document.getElementById('output');
+const compOutput  = document.getElementById('compOutput');
+const compSection = document.getElementById('compSection');
+const compCount   = document.getElementById('compCount');
+const noResults   = document.getElementById('noResults');
+const resultsBox  = document.getElementById('searchResults');
+const clearBtn    = document.getElementById('clearBtn');
+const resultCount = document.getElementById('resultCount');
+const searchBox   = document.getElementById('searchBox');
+
+let catItems  = [];
+let compItems = [];
+let auditItems = [];
+
+const auditOutput = document.getElementById('auditOutput');
+const auditCount  = document.getElementById('auditCount');
+const auditHeader = document.getElementById('auditHeader');
+
+// ─── CATEGORY CARD HTML ───────────────────────────────────────────────────
+function catCardHTML(row, query){
+  const id  = row['LNC ID'] || '';
+  const en  = row['Category Name (English)'] || '';
+  const zh  = row['Category Name (中文)'] || '';
+  const kw  = row['English Keyword'] || '';
+  const rem = (row['Reminder'] || '').trim();
+
+  const reminderBlock = rem ? `
+    <div class="reminder-box">
+      <div class="reminder-label">⚠ Additional Notes</div>
+      <div class="reminder-text">${highlight(rem, query)}</div>
+    </div>` : '';
+
+  return `
+    <div class="card-lncid">LNCID: <span>${esc(id)}</span></div>
+    <div class="card-name">${highlight(en, query)}</div>
+    <div class="card-name-zh">${esc(zh)}</div>
+    <div class="card-kw-label">English Keywords</div>
+    <div class="card-kw">${highlight(kw, query)}</div>
+    ${reminderBlock}
+  `;
+}
+
+// ─── COMPILATION CARD HTML ────────────────────────────────────────────────
+function compCardHTML(row, query){
+  const bestList = (row.best||[]).map(b =>
+    `<li>${highlight(b, query)}</li>`).join('');
+  const acceptList = (row.acceptable||[]).map(a =>
+    `<li>${highlight(a, query)}</li>`).join('');
+
+  const bestBlock = bestList ? `
+    <span class="comp-section-label best">✓ Best Category</span>
+    <ul class="comp-list best-list">${bestList}</ul>` : '';
+
+  const acceptBlock = acceptList ? `
+    <span class="comp-section-label acceptable">◎ Acceptable</span>
+    <ul class="comp-list acceptable-list">${acceptList}</ul>` : '';
+
+  const notesBlock = row.notes ? `
+    <div class="comp-notes">
+      <span class="comp-section-label notes-label">★ Note</span>
+      <div class="comp-notes-text">${highlight(row.notes, query)}</div>
+    </div>` : '';
+
+  return `
+    <div class="comp-left">
+      <span class="comp-badge">Product Type</span>
+      <div class="comp-keyword">${highlight(row.keywords, query)}</div>
+    </div>
+    <div class="comp-right">
+      ${bestBlock}
+      ${acceptBlock}
+      ${notesBlock}
+    </div>
+  `;
+}
+
+// ─── AUDIT CARD HTML ─────────────────────────────────────────────────────
+function auditCardHTML(row, query){
+  const isDeboosted = (row.error_type||'').toLowerCase().includes('deboost');
+  const typeLabel   = isDeboosted ? 'Wrongly Deboosted' : 'Wrongly Passed';
+  const typeClass   = isDeboosted ? 'deboosted' : 'passed';
+
+  const catLine = (row.user_category && row.reviewer_category)
+    ? `<div class="audit-cats">
+        <span class="cat-from">${highlight(row.user_category, query)}</span>
+        <span class="cat-arrow">→</span>
+        <span class="cat-to">${highlight(row.reviewer_category, query)}</span>
+       </div>`
+    : row.user_category
+      ? `<div class="audit-cats"><span class="cat-from">${highlight(row.user_category, query)}</span></div>`
+      : '';
+
+  const feedbackBlock = row.sz_feedback
+    ? `<div class="audit-feedback">
+        <span class="audit-fb-label">💬 Shopee Feedback</span>
+        ${highlight(row.sz_feedback, query)}
+       </div>` : '';
+
+  return `
+    <div class="audit-top">
+      <span class="audit-type ${typeClass}">${esc(typeLabel)}</span>
+      ${catLine}
+    </div>
+    <div class="audit-lesson">${highlight(row.lesson, query)}</div>
+    ${feedbackBlock}
+  `;
+}
+
+// ─── BUILD DOM ────────────────────────────────────────────────────────────
+function buildAll(){
+  output.innerHTML = '';
+  compOutput.innerHTML = '';
+  auditOutput.innerHTML = '';
+  catItems   = [];
+  compItems  = [];
+  auditItems = [];
+
+  ckData.forEach(row => {
+    const hasReminder = (row['Reminder']||'').trim().length > 0;
+    const el = document.createElement('div');
+    el.className = 'data-card' + (hasReminder ? ' has-reminder' : '');
+    el.dataset.type = 'category';
+    el.dataset.id   = row['LNC ID'];
+    el.dataset.row  = JSON.stringify(row);
+    el.innerHTML = catCardHTML(row, '');
+    output.appendChild(el);
+    catItems.push({ el, row, type:'category' });
+  });
+
+  compilationData.forEach(row => {
+    const el = document.createElement('div');
+    el.className = 'comp-card';
+    el.dataset.type = 'compilation';
+    el.dataset.id   = 'comp-' + row.keywords.slice(0, 30);
+    el.dataset.row  = JSON.stringify(row);
+    el.innerHTML = compCardHTML(row, '');
+    compOutput.appendChild(el);
+    compItems.push({ el, row, type:'compilation' });
+  });
+
+  // Audit cases
+  auditData.forEach((row, i) => {
+    const el = document.createElement('div');
+    el.className = 'audit-card';
+    el.dataset.type = 'audit';
+    el.dataset.id   = 'audit-' + i;
+    el.dataset.row  = JSON.stringify(row);
+    el.innerHTML = auditCardHTML(row, '');
+    auditOutput.appendChild(el);
+    auditItems.push({ el, row, type:'audit' });
+  });
+
+  compCount.textContent  = `${compilationData.length} entries`;
+  auditCount.textContent = `${auditData.length} cases`;
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────
+let currentQuery = '';
+
+searchBox.addEventListener('input', function(){
+  currentQuery = this.value.trim();
+  clearBtn.style.display = currentQuery ? 'block' : 'none';
+  runSearch(currentQuery);
+});
+
+clearBtn.addEventListener('click', function(){
+  searchBox.value = ''; currentQuery = '';
+  clearBtn.style.display = 'none';
+  resultsBox.style.display = 'none';
+  resultCount.textContent = '';
+  noResults.style.display = 'none';
+  resetAll();
+  searchBox.focus();
+});
+
+function runSearch(query){
+  const q = norm(query);
+
+  if(q.length < 2){
+    resultsBox.style.display = 'none';
+    resultCount.textContent = '';
+    resetAll();
+    return;
+  }
+
+  // ── Category cards ──
+  const scoredCats = [];
+  catItems.forEach(item => {
+    const s = scoreMatch(item.row, q);
+    item.el.style.display = 'none';
+    if(s >= 0) scoredCats.push({ ...item, score: s });
+  });
+  scoredCats.sort((a, b) => b.score - a.score);
+  scoredCats.forEach(item => {
+    const row = JSON.parse(item.el.dataset.row);
+    item.el.innerHTML = catCardHTML(row, query);
+    item.el.style.display = '';
+    output.appendChild(item.el);
+  });
+
+  // ── Compilation cards ──
+  const scoredComp = [];
+  compItems.forEach(item => {
+    const s = scoreMatch(item.row, q);
+    item.el.style.display = 'none';
+    if(s >= 0) scoredComp.push({ ...item, score: s });
+  });
+  scoredComp.sort((a, b) => b.score - a.score);
+  scoredComp.forEach(item => {
+    const row = JSON.parse(item.el.dataset.row);
+    item.el.innerHTML = compCardHTML(row, query);
+    item.el.style.display = '';
+    compOutput.appendChild(item.el);
+  });
+
+  // ── Audit cards ──
+  const scoredAudit = [];
+  auditItems.forEach(item => {
+    const s = scoreMatch(item.row, q);
+    item.el.style.display = 'none';
+    if(s >= 0) scoredAudit.push({ ...item, score: s });
+  });
+  scoredAudit.sort((a, b) => b.score - a.score);
+  scoredAudit.forEach(item => {
+    const row = JSON.parse(item.el.dataset.row);
+    item.el.innerHTML = auditCardHTML(row, query);
+    item.el.style.display = '';
+    auditOutput.appendChild(item.el);
+  });
+
+  const catVisible   = scoredCats.length;
+  const compVisible  = scoredComp.length;
+  const auditVisible = scoredAudit.length;
+  const total = catVisible + compVisible + auditVisible;
+
+  resultCount.textContent = total === 0
+    ? 'No results found.'
+    : `${catVisible} categor${catVisible===1?'y':'ies'} · ${compVisible} product type${compVisible===1?'':'s'} · ${auditVisible} audit case${auditVisible===1?'':'s'} found`;
+
+  noResults.style.display = total === 0 ? 'flex' : 'none';
+  if(total === 0) noResults.innerHTML = `<span>🔍</span>No results for "<b>${esc(query)}</b>".<br>Try a different keyword or LNCID.`;
+
+  compCount.textContent  = compVisible  > 0 ? `${compVisible} match${compVisible===1?'':'es'}`   : `${compilationData.length} entries`;
+  auditCount.textContent = auditVisible > 0 ? `${auditVisible} match${auditVisible===1?'':'es'}` : `${auditData.length} cases`;
+
+  const dropItems = [
+    ...scoredCats.slice(0, 5),
+    ...scoredComp.slice(0, 2),
+    ...scoredAudit.slice(0, 2)
+  ];
+  renderDropdown(dropItems, query);
+}
+
+function resetAll(){
+  buildAll();
+}
+
+// ─── DROPDOWN ─────────────────────────────────────────────────────────────
+function renderDropdown(items, query){
+  if(!items.length){ resultsBox.style.display = 'none'; return; }
+
+  resultsBox.innerHTML = items.map(item => {
+    if(item.type === 'category'){
+      const row = item.row;
+      return `<div class="result-item" data-id="${esc(row['LNC ID'])}" data-type="category">
+        <div class="result-id">LNCID: ${esc(row['LNC ID'])}</div>
+        <div class="result-category">${highlight(row['Category Name (English)'], query)}</div>
+      </div>`;
+    } else if(item.type === 'compilation'){
+      const row = item.row;
+      return `<div class="result-item result-compilation" data-id="${esc('comp-'+row.keywords.slice(0,20))}" data-type="compilation">
+        <div class="result-id">📋 Product Type</div>
+        <div class="result-category">${highlight(row.keywords, query)}</div>
+      </div>`;
+    } else {
+      const row = item.row;
+      const isDeboosted = (row.error_type||'').toLowerCase().includes('deboost');
+      return `<div class="result-item result-compilation" data-id="${esc(item.el.dataset.id)}" data-type="audit">
+        <div class="result-id">${isDeboosted ? '⚠️ Wrongly Deboosted' : '⚠️ Wrongly Passed'}</div>
+        <div class="result-category">${highlight(row.user_category || row.lesson.slice(0,60), query)}</div>
+      </div>`;
+    }
+  }).join('');
+  resultsBox.style.display = 'block';
+}
+
+resultsBox.addEventListener('click', function(e){
+  const item = e.target.closest('.result-item');
+  if(!item) return;
+
+  const id   = item.dataset.id;
+  const type = item.dataset.type;
+  const pool = type === 'compilation' ? compItems
+             : type === 'audit'       ? auditItems
+             :                          catItems;
+  const target = pool.find(i => i.el.dataset.id === id);
+  if(!target || target.el.style.display === 'none') return;
+
+  resultsBox.style.display = 'none';
+  searchBox.blur();
+
+  target.el.scrollIntoView({ behavior:'smooth', block:'center' });
+
+  setTimeout(() => {
+    let count = 0;
+    function pulse(){
+      if(count >= 3) return;
+      target.el.classList.remove('active-highlight');
+      void target.el.offsetWidth;
+      target.el.classList.add('active-highlight');
+      count++;
+      setTimeout(pulse, 700);
+    }
+    pulse();
+  }, 350);
+});
+
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.search-wrap')) resultsBox.style.display = 'none';
+});
+searchBox.addEventListener('focus', function(){
+  if(currentQuery.length >= 2) resultsBox.style.display = 'block';
+});
+
+// ─── THEME TOGGLE ─────────────────────────────────────────────────────────
+const themeBtn = document.getElementById('themeBtn');
+
+function applyTheme(light){
+  if(light){
+    document.body.classList.add('light');
+    themeBtn.textContent = '🌙';
+    themeBtn.title = 'Switch to dark mode';
+  } else {
+    document.body.classList.remove('light');
+    themeBtn.textContent = '☀️';
+    themeBtn.title = 'Switch to light mode';
+  }
+}
+
+// Restore saved preference
+const savedTheme = localStorage.getItem('sz-theme');
+applyTheme(savedTheme === 'light');
+
+themeBtn.addEventListener('click', function(){
+  const isLight = document.body.classList.contains('light');
+  applyTheme(!isLight);
+  localStorage.setItem('sz-theme', !isLight ? 'light' : 'dark');
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+buildAll();
+showToast(`✓ ${ckData.length.toLocaleString()} categories · ${compilationData.length} product types · ${auditData.length} audit cases loaded`, 'success');
+</script>
+</body>
+</html>
